@@ -23,7 +23,7 @@ class BeachResort(toga.App):
         self.select_mp4_button = toga.Button("Select MP4", on_press=self.select_mp4, style=Pack(padding=5))
         self.select_vtt_button = toga.Button("Select VTT", on_press=self.select_vtt, style=Pack(padding=5))
         
-        self.run_button = toga.Button("Translate & Burn Subtitles", on_press=self.run_process, style=Pack(padding=5))
+        self.run_button = toga.Button("Translate & Burn Subtitles", on_press=self.async_run_process, style=Pack(padding=5))
         
         self.log_output = toga.MultilineTextInput(readonly=True, style=Pack(flex=1, padding=5))
         
@@ -94,8 +94,28 @@ class BeachResort(toga.App):
     def select_vtt(self, widget):
         asyncio.create_task(self.async_select_vtt(widget))
 
-    def run_process(self, widget):
-        """Runs the full process: parse, translate, write SRT, and burn subtitles."""
+    async def async_run_process(self, widget):
+        try:
+            self.log("starting async run process")
+            # First, prompt the user to choose an output file location using a save file dialog.
+            save_dialog = toga.SaveFileDialog(
+                title="Select Output File Location",
+                file_types=["mp4"],
+                suggested_filename=os.path.splitext(self.mp4_file)[0] + "-subtitled.mp4"
+            )
+            output_file = await self.dialog(save_dialog)
+            if not output_file:
+                self.log("Output file not selected; process canceled.")
+                return
+            self.output_file = output_file
+            self.log(f"Selected output file: {self.output_file}")
+        except ValueError:
+            self.label.text = "Open file (app) dialog was canceled"
+
+        # Determine SRT file name from the chosen output file.
+        srt_file = os.path.splitext(self.output_file)[0] + "-translated.srt"
+        
+        # Ensure that both the input MP4 and VTT files have been selected.
         if not self.mp4_file or not self.vtt_file:
             self.log("Please select both an MP4 file and a VTT file.")
             return
@@ -103,10 +123,6 @@ class BeachResort(toga.App):
         self.log("Starting the translation and burning process...")
 
         try:
-            # Determine output filenames
-            srt_file = os.path.splitext(self.vtt_file)[0] + "-translated.srt"
-            output_video = os.path.splitext(self.mp4_file)[0] + "_subtitled.mp4"
-            
             # Parse the VTT file into subtitle blocks.
             blocks = self.parse_vtt_blocks(self.vtt_file)
             self.log("Parsed VTT file.")
@@ -120,8 +136,8 @@ class BeachResort(toga.App):
             self.log(f"Wrote SRT file: {srt_file}")
             
             # Burn the subtitles into the video using FFmpeg.
-            self.burn_subtitles(self.mp4_file, srt_file, output_video)
-            self.log(f"Subtitled video saved as: {output_video}")
+            self.burn_subtitles(self.mp4_file, srt_file, self.output_file)
+            self.log(f"Subtitled video saved as: {self.output_file}")
         except Exception as e:
             self.log(f"Error during process: {e}")
 
