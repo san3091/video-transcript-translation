@@ -21,11 +21,17 @@ test_sources = [
 ]
 
 requires = [
+    "transformers~=4.28",
+    "torch~=2.2",
+    "sentencepiece~=0.2",
+    "numpi<2",
 ]
 test_requires = [
     "pytest",
 ]
-entry_point = ["beachresort.__main__:main"]
+entry_point = [
+    "beachresort.__main__:main",
+]
 
 [tool.briefcase.app.beachresort.macOS]
 universal_build = true
@@ -174,10 +180,6 @@ build_gradle_dependencies = [
     # "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0",
     # Needed for MapView
     # "org.osmdroid:osmdroid-android:6.1.20",
-    "transformers~=4.28"
-    "torch~=2.2"
-    "sentencepiece~=0.2"
-    "numpi<2"
 ]
 
 # Web deployments
