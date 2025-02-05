@@ -15,6 +15,14 @@ TODO
 
 make sure `python` and `pip` are installed
 
+the script makes system calls to `ffmpeg` for video processing so make sure `ffmpeg` is installed
+
+with brew:
+
+```
+brew install ffmpeg
+```
+
 install dependencies
 
 ```
