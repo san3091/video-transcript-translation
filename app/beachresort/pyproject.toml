@@ -24,7 +24,7 @@ requires = [
     "transformers~=4.28",
     "torch~=2.2",
     "sentencepiece~=0.2",
-    "numpi<2",
+    "numpy<2",
 ]
 test_requires = [
     "pytest",

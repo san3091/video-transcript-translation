@@ -5,6 +5,7 @@ import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
 import subprocess
+import asyncio
 import os
 
 # Import the translation model libraries
@@ -12,23 +13,20 @@ from transformers import MarianMTModel, MarianTokenizer
 
 class BeachResort(toga.App):
     def startup(self):
-        # Create the main window.
         self.main_window = toga.MainWindow(title=self.formal_name)
         
         # UI Elements for file selection
         self.mp4_file_label = toga.Label("MP4 File: None", style=Pack(padding=5))
         self.vtt_file_label = toga.Label("VTT File: None", style=Pack(padding=5))
         
+        # Buttons for file selection (using asynchronous callbacks)
         self.select_mp4_button = toga.Button("Select MP4", on_press=self.select_mp4, style=Pack(padding=5))
         self.select_vtt_button = toga.Button("Select VTT", on_press=self.select_vtt, style=Pack(padding=5))
         
-        # Button to trigger the translation and burning process
         self.run_button = toga.Button("Translate & Burn Subtitles", on_press=self.run_process, style=Pack(padding=5))
         
-        # Multiline text area for output/logs
         self.log_output = toga.MultilineTextInput(readonly=True, style=Pack(flex=1, padding=5))
         
-        # Layout: arrange file selection in a box
         file_box = toga.Box(
             children=[
                 toga.Box(children=[self.mp4_file_label, self.select_mp4_button], style=Pack(direction=ROW, padding=5)),
@@ -37,7 +35,6 @@ class BeachResort(toga.App):
             style=Pack(direction=COLUMN, padding=10)
         )
         
-        # Main box layout
         main_box = toga.Box(
             children=[file_box, self.run_button, self.log_output],
             style=Pack(direction=COLUMN, padding=10)
@@ -46,7 +43,6 @@ class BeachResort(toga.App):
         self.main_window.content = main_box
         self.main_window.show()
 
-        # Initialize file paths
         self.mp4_file = None
         self.vtt_file = None
 
@@ -61,33 +57,42 @@ class BeachResort(toga.App):
         """Append a message to the log output."""
         self.log_output.value += message + "\n"
 
-    def select_mp4(self, widget):
-        """Opens a file dialog to select an MP4 file."""
+    # --- File Dialog Methods using async ---
+    async def async_select_mp4(self, widget):
         try:
-            file_path = toga.FileDialog.open_file(
+            file_dialog = toga.OpenFileDialog(
                 title="Select MP4 File",
                 file_types=["mp4"]
             )
+            # Use dialog.show() to present the dialog and await the result.
+            file_path = await self.dialog(file_dialog)
             if file_path:
                 self.mp4_file = file_path
                 self.mp4_file_label.text = f"MP4 File: {os.path.basename(file_path)}"
                 self.log(f"Selected MP4: {file_path}")
-        except Exception as e:
-            self.log(f"Error selecting MP4 file: {e}")
+        except ValueError:
+            self.label.text = "Open file (app) dialog was canceled"
 
-    def select_vtt(self, widget):
-        """Opens a file dialog to select a VTT file."""
-        try:
-            file_path = toga.FileDialog.open_file(
+    def select_mp4(self, widget):
+        # Schedule the asynchronous file dialog method.
+        asyncio.create_task(self.async_select_mp4(widget))
+
+    async def async_select_vtt(self, widget):
+        try: 
+            file_dialog = toga.OpenFileDialog(
                 title="Select VTT File",
                 file_types=["vtt"]
             )
+            file_path = await self.dialog(file_dialog)
             if file_path:
                 self.vtt_file = file_path
                 self.vtt_file_label.text = f"VTT File: {os.path.basename(file_path)}"
                 self.log(f"Selected VTT: {file_path}")
-        except Exception as e:
-            self.log(f"Error selecting VTT file: {e}")
+        except ValueError:
+            self.label.text = "Open file (app) dialog was canceled"
+
+    def select_vtt(self, widget):
+        asyncio.create_task(self.async_select_vtt(widget))
 
     def run_process(self, widget):
         """Runs the full process: parse, translate, write SRT, and burn subtitles."""
