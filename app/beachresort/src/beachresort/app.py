@@ -96,7 +96,6 @@ class BeachResort(toga.App):
 
     async def async_run_process(self, widget):
         try:
-            self.log("starting async run process")
             # First, prompt the user to choose an output file location using a save file dialog.
             save_dialog = toga.SaveFileDialog(
                 title="Select Output File Location",
