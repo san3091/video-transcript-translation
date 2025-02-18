@@ -26,6 +26,11 @@ requires = [
     "sentencepiece~=0.2",
     "numpy<2",
 ]
+
+references = [
+    "resources/ffmpeg_bin"
+]
+
 test_requires = [
     "pytest",
 ]

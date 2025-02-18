@@ -204,18 +204,27 @@ class BeachResort(toga.App):
                 f.write(f"{block['start']} --> {block['end']}\n")
                 f.write(f"{block['text']}\n\n")
 
-    def burn_subtitles(self, video_file, srt_file, output_file):
-        """
-        Calls FFmpeg to burn the SRT subtitles into the video.
-        """
+    def burn_subtitles(video_file, srt_file, output_file):
+        # Determine the path to the bundled FFmpeg binary.
+        # Assuming this file is in your source folder, the FFmpeg binary will be in:
+        # ../Resources/ffmpeg_bin/ffmpeg
+        current_dir = os.path.dirname(__file__)
+        resources_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "Resources"))
+        ffmpeg_path = os.path.join(resources_dir, "ffmpeg_bin", "ffmpeg")
+
+        # Optional: Verify that the file exists and is executable.
+        if not (os.path.exists(ffmpeg_path) and os.access(ffmpeg_path, os.X_OK)):
+            raise RuntimeError(f"Bundled FFmpeg binary not found or not executable: {ffmpeg_path}")
+
+        # Build and run the FFmpeg command using the bundled binary.
         cmd = [
-            "ffmpeg",
+            ffmpeg_path,
             "-i", video_file,
             "-vf", f"subtitles={srt_file}",
             "-c:a", "copy",
             output_file
         ]
-        self.log("Running FFmpeg to burn subtitles...")
+        print("Running FFmpeg command:", " ".join(cmd))
         subprocess.run(cmd, check=True)
 
 def main():
